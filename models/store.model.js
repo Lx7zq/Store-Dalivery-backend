@@ -1,19 +1,18 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("./db");
 
-
 const Store = sequelize.define("Store", {
   name: {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  adminId:{
-    type:DataTypes.INTEGER,
-    allowNull:false,
+  adminId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
     references: {
-        model:"user",
-        key: "id",
-    }
+      model: "Users", // เปลี่ยนจาก "User" เป็น "Users" (ชื่อของตารางใน PostgreSQL)
+      key: "id",
+    },
   },
   address: {
     type: DataTypes.STRING,
@@ -31,18 +30,18 @@ const Store = sequelize.define("Store", {
     type: DataTypes.DECIMAL,
     allowNull: false,
   },
-  radius:{
-    type:DataTypes.INTEGER,
-    allowNull:false,
+  radius: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
   },
 });
 
 Store.sync({ force: false })
   .then(() => {
-    console.log("Table created or already exists");
+    console.log("Store table created or already exists");
   })
   .catch((error) => {
-    console.log("Error creating Financial Table", error);
+    console.log("Error creating Store table", error);
   });
 
 module.exports = Store;
