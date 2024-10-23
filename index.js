@@ -2,63 +2,70 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 const db = require("./models");
+const storeRoutes = require("./routes/store.router"); // Import store routes
+const authRouter = require("./routes/auth.router");
+
 const PORT = process.env.PORT || 5000;
 const frontend_url = process.env.FRONTEND_URL;
-const role = db.Role;
-const Store = db.Store;
-const User = db.User; // นำเข้ารุ่น User
+const { Role, User, Store } = db; // Destructure models
 
 const app = express();
 
-const corsOption = {
+// CORS configuration
+const corsOptions = {
   origin: frontend_url,
 };
 
-// เชื่อมต่อฐานข้อมูลและซิงค์โมเดล
+// Middleware
+app.use(cors(corsOptions));
+app.use(express.json()); // Parse incoming JSON requests
+
+// Validate environment variables
+if (!frontend_url) {
+  console.error("FRONTEND_URL is not defined in environment variables.");
+  process.exit(1);
+}
+
+// Database connection and model synchronization
 // db.sequelize
-//   .sync({ alter: false }) // ใช้ alter: true เพื่อให้ฐานข้อมูลอัพเดตตามโมเดล
+//   .sync({ alter: false }) // Set `alter: true` to auto-update tables based on models
 //   .then(() => {
 //     console.log("Database synchronized");
-//     initRole(); // เรียกใช้ฟังก์ชันเพื่อสร้างบทบาท
-//     User.sync(); // ซิงค์โมเดล User
+//     initRoles(); // Initialize roles
 //   })
 //   .catch((err) => {
 //     console.error("Error syncing database:", err);
+//     process.exit(1); // Exit process if DB sync fails
 //   });
 
-// ฟังก์ชันเพื่อสร้าง Role (ในกรณีที่ยังไม่มี)
-const initRole = async () => {
+// Initialize roles if they don't exist
+const initRoles = async () => {
   try {
-    await role.findOrCreate({ where: { id: 1, name: "user" } });
-    await role.findOrCreate({ where: { id: 2, name: "moderator" } });
-    await role.findOrCreate({ where: { id: 3, name: "admin" } });
+    await Role.findOrCreate({ where: { id: 1, name: "user" } });
+    await Role.findOrCreate({ where: { id: 2, name: "moderator" } });
+    await Role.findOrCreate({ where: { id: 3, name: "admin" } });
     console.log("Roles initialized");
   } catch (error) {
     console.error("Error initializing roles:", error);
   }
 };
 
-// Middleware
-app.use(cors(corsOption));
+// Routes
+app.use("/api/stores", storeRoutes); // Use store routes
+app.use('/api/auth', authRouter); // เพิ่ม auth router สำหรับการจัดการการล็อกอิน
 
-// Route ดึงข้อมูลร้านค้าจากฐานข้อมูล
-app.get("/api/stores", async (req, res) => {
-  try {
-    const stores = await Store.findAll();
-    res.status(200).json(stores);
-  } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error fetching stores", error: error.message });
-  }
-});
-
-// หน้าเริ่มต้น
+// Home route
 app.get("/", (req, res) => {
-  res.send("<h1>Welcome to API for Store Delivery Zone Checker</h1>");
+  res.send("<h1>Welcome to the API for Store Delivery Zone Checker</h1>");
 });
 
-// เริ่มเซิร์ฟเวอร์
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: 'Internal Server Error' });
+});
+
+// Start the server
 app.listen(PORT, () => {
-  console.log("Server running on port " + PORT);
+  console.log(`Server running on http://localhost:${PORT}`);
 });

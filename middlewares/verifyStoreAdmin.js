@@ -1,35 +1,27 @@
-//user model
-import Store from "../models/store.model";
+const { User, Store } = require("../models");
 
-const { where } = require("sequelize");
+const checkStoreAdmin = async (req, res, next) => {
+    try {
+        const userId = req.userId; // รับ userId จาก token
+        console.log("User ID from token:", userId);
 
+        const store = await Store.findOne({ where: { id: req.params.id } }); // ค้นหาร้านตาม ID ที่ส่งเข้ามา
+        console.log("Store admin ID:", store.adminId); // ตรวจสอบ adminId ของร้าน
 
-checkStoreAdmin = async (req,res,next) =>{
-    await User.findOne({
-        where:{
-            id:req.body.id
+        if (!store || store.adminId !== userId) {
+            return res.status(403).send({
+                message: "Access Denied! Only the store's admin is allowed.",
+            });
         }
-    }).then((user)=>{
-        if(!user){
-            res.status(400).send({message: "Failed! user not found"})
-        return;
-        }
-        Store.findOne({
-            where:{
-                adminId: user.id
-            }
-        }).then((store)=>{
-            if(! store){
-                 res.status(400).send({ message: "Access Denied!, Only Store's admin is allowed" });
-                 return;
-            }
-            next();
-        })
-    })
-}
 
-const verifyStoreAdmin = {
-    checkStoreAdmin
-}
+        // ถ้าทุกอย่างถูกต้อง ไป middleware ถัดไป
+        next();
+    } catch (error) {
+        console.error("Error checking store admin:", error);
+        res.status(500).send({ message: "Internal server error." });
+    }
+};
 
-module.exports = verifyStoreAdmin
+
+
+module.exports = checkStoreAdmin;

@@ -1,32 +1,37 @@
-const Store = require("../models/store.model"); 
+const Store = require("../models/store.model");
 
 // Create a new store
-const createStore = async (req, res) => {
+exports.createStore = async (req, res) => {
   try {
-    const { name, adminId, address, direction, lat, lng, radius } = req.body;
-    const newStore = await Store.create({
+    const { name, address, adminId, direction, lat, lng, radius } = req.body;
+    console.log(req.body);
+
+    const userId = req.userId; // รับ userId จาก token ที่ถูก decode
+
+    // สร้างร้านค้า พร้อมบันทึก adminId
+    const store = await Store.create({
       name,
-      adminId,
       address,
+      adminId: userId, // ใช้ userId เป็น adminId ของร้านนี้
       direction,
       lat,
       lng,
       radius,
     });
-    res.status(201).json({
-      message: "Store created successfully",
-      store: newStore,
+
+    res.status(201).send({
+      message: "Store created successfully!",
+      store,
     });
   } catch (error) {
-    res.status(500).json({
-      message: "Error creating store",
-      error: error.message,
-    });
+    console.error("Error creating store:", error);
+    res.status(500).send({ message: "Error occurred while creating store." });
   }
 };
 
+
 // Get all stores
-const getAllStores = async (req, res) => {
+exports.getAllStores = async (req, res) => {
   try {
     const stores = await Store.findAll();
     res.status(200).json(stores);
@@ -39,7 +44,7 @@ const getAllStores = async (req, res) => {
 };
 
 // Get a single store by ID
-const getStoreById = async (req, res) => {
+exports.getStoreById = async (req, res) => {
   try {
     const storeId = req.params.id;
     const store = await Store.findByPk(storeId);
@@ -58,7 +63,7 @@ const getStoreById = async (req, res) => {
 };
 
 // Update a store
-const updateStore = async (req, res) => {
+exports.updateStore = async (req, res) => {
   try {
     const storeId = req.params.id;
     const { name, adminId, address, direction, lat, lng, radius } = req.body;
@@ -92,7 +97,7 @@ const updateStore = async (req, res) => {
 };
 
 // Delete a store
-const deleteStore = async (req, res) => {
+exports.deleteStore = async (req, res) => {
   try {
     const storeId = req.params.id;
 
@@ -113,12 +118,4 @@ const deleteStore = async (req, res) => {
       error: error.message,
     });
   }
-};
-
-module.exports = {
-  createStore,
-  getAllStores,
-  getStoreById,
-  updateStore,
-  deleteStore,
 };
